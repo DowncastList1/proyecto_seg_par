@@ -12,7 +12,7 @@ BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
 IMAGE_PATH = BASE_PATH + '/images/'
 SOUND_PATH = BASE_PATH + '/sounds/'
-
+##Se eligen colores y se les asigna un  nombre 
 # Colors (R, G, B)
 WHITE = (255, 255, 255)
 GREEN = (78, 255, 87)
@@ -37,13 +37,17 @@ ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 
 
+##clase que inicia con un control para hacer la nave del jugador
 class Ship(sprite.Sprite):
+    ##inicializa los atributos que debe tener a fuerza en la nave del jugador 
     def __init__(self):
         sprite.Sprite.__init__(self)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
-
+    
+    ##Manera en la que se va a mover en la pantalla con las coordenadas x y y 
+    ##dependiendo de lo que reciba de señal
     def update(self, keys, *args):
         if keys[K_LEFT] and self.rect.x > 10:
             self.rect.x -= self.speed
@@ -103,8 +107,8 @@ class Enemy(sprite.Sprite):
 
 #Se crea la clase EnemiesGroup con el parametro sprite.Group
 class EnemiesGroup(sprite.Group):
-    '''Constructo que inicializar el grupo, le damos los parametros de columnas(colums) y filas (rows)
-        Es llamada cuando se crea una nueva instancia de la clase EnemiesGrou'''
+    ##Constructo que inicializar el grupo, le damos los parametros de columnas(colums) y filas (rows)
+    ##    Es llamada cuando se crea una nueva instancia de la clase EnemiesGroup
     def __init__(self, columns, rows):
         #Se establecen varios atributos para el movimiento,tiempo y posicion de los enemigos
         sprite.Group.__init__(self)
@@ -153,15 +157,15 @@ class EnemiesGroup(sprite.Group):
 
             self.timer += self.moveTime
     
-    '''Funcion para agregar enemigos a la instancia de la clase
-    Tambien almacena a los enemigos en una matriz llamada self.enemies'''
+    ##Funcion para agregar enemigos a la instancia de la clase
+    ##Tambien almacena a los enemigos en una matriz llamada self.enemies
     def add_internal(self, *sprites):
         super(EnemiesGroup, self).add_internal(*sprites)
         for s in sprites:
             self.enemies[s.row][s.column] = s
 
-    '''Funcion para eleminar enemigos a la instancia de la clase tambien 
-    los elimina de la mariz'''
+    ##Funcion para eleminar enemigos a la instancia de la clase tambien 
+    ##los elimina de la mariz
     def remove_internal(self, *sprites):
         super(EnemiesGroup, self).remove_internal(*sprites)
         for s in sprites:
@@ -169,8 +173,8 @@ class EnemiesGroup(sprite.Group):
         self.update_speed()
 
 
-    '''Verifica si una columna esta vacia (Todos los enemigis han sido eliminados)
-    en kla matriz self.enemies'''
+    ##Verifica si una columna esta vacia (Todos los enemigis han sido eliminados)
+    ##en kla matriz self.enemies
     def is_column_dead(self, column):
         return not any(self.enemies[row][column]
                        for row in range(self.rows))
@@ -191,8 +195,8 @@ class EnemiesGroup(sprite.Group):
 
     #Sirve para actualizar cuando se mata a un enemigo 
     def kill(self, enemy):
-        '''Actualiza la matriz de los enemigos estableciendo la posicion 
-        de ek enemigo a None'''
+        ##Actualiza la matriz de los enemigos estableciendo la posicion 
+        ##de lk enemigo a None
         self.enemies[enemy.row][enemy.column] = None
         is_column_dead = self.is_column_dead(enemy.column)
         if is_column_dead:
@@ -308,17 +312,23 @@ class MysteryExplosion(sprite.Sprite):
             self.kill()
 
 
+##Es para la la explosion de la nave del jugador, accion, no objeto
 class ShipExplosion(sprite.Sprite):
+    ##metodo principal de la clase para mostrar la imagen de vidas(nave del jugador),
+    ## que aparezca en las coordenadas de inicio y el tiempo de recuperacion 
     def __init__(self, ship, *groups):
         super(ShipExplosion, self).__init__(*groups)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(ship.rect.x, ship.rect.y))
         self.timer = time.get_ticks()
 
+    ##Recarga donde estaba la nave y la pone en las coordenasas indicadas
+    ##  ademas de sumarle una cantidad que representa cuando se pierde una vida
     def update(self, current_time, *args):
         passed = current_time - self.timer
         if 300 < passed <= 600:
             game.screen.blit(self.image, self.rect)
+        ##Si es mayor a 900 se termina el juego y esto es mandado a la clase principal de el juego 
         elif 900 < passed:
             self.kill()
 
@@ -656,6 +666,8 @@ class SpaceInvaders(object):
             display.update()
             self.clock.tick(60)
 
+##Que comience el juego, el juego va a ser igual a la clase principal,
+##  y despues se va a iniciar la funcioon main
 if __name__ == '__main__':
     game = SpaceInvaders()
     game.main()
