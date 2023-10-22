@@ -119,7 +119,10 @@ class Enemy(sprite.Sprite):
 
 
 class EnemiesGroup(sprite.Group):
+    '''Constructo que inicializar el grupo, le damos los parametros de columnas(colums) y filas (rows)
+        Es llamada cuando se crea una nueva instancia de la clase EnemiesGrou'''
     def __init__(self, columns, rows):
+        #Se establecen varios atributos para el movimiento,tiempo y posicion de los enemigos
         sprite.Group.__init__(self)
         self.enemies = [[None] * columns for _ in range(rows)]
         self.columns = columns
@@ -137,7 +140,9 @@ class EnemiesGroup(sprite.Group):
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
 
+    #Funcion que actualiza la posicion de los enemigos, le damos el parametro de current_time
     def update(self, current_time):
+        #Se actualiza la pocision en base al tiempo actual del juego 
         if current_time - self.timer > self.moveTime:
             if self.direction == 1:
                 max_move = self.rightMoves + self.rightAddMove
@@ -163,40 +168,52 @@ class EnemiesGroup(sprite.Group):
                 self.moveNumber += 1
 
             self.timer += self.moveTime
-
+     '''Funcion para agregar enemigos a  la instancia de la clase
+     Tambien almacena a los enemugos en una matriz llamada self.enemies'''
     def add_internal(self, *sprites):
         super(EnemiesGroup, self).add_internal(*sprites)
         for s in sprites:
             self.enemies[s.row][s.column] = s
 
+    '''Funcion para eleminar enemigos a la instancia de la clase tambien 
+    los elimina de la mariz'''
     def remove_internal(self, *sprites):
         super(EnemiesGroup, self).remove_internal(*sprites)
         for s in sprites:
             self.kill(s)
         self.update_speed()
 
+
+    '''Verifica si una columna esta vacia (Todos los enemigis han sido eliminados)
+    en kla matriz self.enemies'''
     def is_column_dead(self, column):
         return not any(self.enemies[row][column]
                        for row in range(self.rows))
 
+    #Devuelve un enemigo
     def random_bottom(self):
         col = choice(self._aliveColumns)
         col_enemies = (self.enemies[row - 1][col]
                        for row in range(self.rows, 0, -1))
         return next((en for en in col_enemies if en is not None), None)
 
+    #Cambia la velocidad de los enemigos segun los enemigos elminados
     def update_speed(self):
         if len(self) == 1:
             self.moveTime = 200
         elif len(self) <= 10:
             self.moveTime = 400
 
+    #Sirve para actualizar cuando se mata a un enemigo 
     def kill(self, enemy):
+        '''Actualiza la matriz de los enemigos estableciendo la posicion 
+        de ek enemigo a None'''
         self.enemies[enemy.row][enemy.column] = None
         is_column_dead = self.is_column_dead(enemy.column)
         if is_column_dead:
             self._aliveColumns.remove(enemy.column)
 
+        #Verifica si la columna a la derecha esta vacio 
         if enemy.column == self._rightAliveColumn:
             while self._rightAliveColumn > 0 and is_column_dead:
                 self._rightAliveColumn -= 1
@@ -405,11 +422,14 @@ class Text(object):
 
 
 class SpaceInvaders(object):
+    ## Inicializa la clase SpaceIvaders
     def __init__(self):
         # It seems, in Linux buffersize=512 is not enough, use 4096 to prevent:
         #   ALSA lib pcm.c:7963:(snd_pcm_recover) underrun occurred
         mixer.pre_init(44100, -16, 1, 4096)
         init()
+
+        ## Se definen y establecen valores de los atributos para 
         self.clock = time.Clock()
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
