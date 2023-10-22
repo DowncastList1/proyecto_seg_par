@@ -7,12 +7,12 @@ from pygame import *
 import sys
 from os.path import abspath, dirname
 from random import choice
-##desde donde se buscan los archivos y en que carpeta se va a buscar 
+
 BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
 IMAGE_PATH = BASE_PATH + '/images/'
 SOUND_PATH = BASE_PATH + '/sounds/'
-##Se eligen colores y se les asigna un  nombre 
+
 # Colors (R, G, B)
 WHITE = (255, 255, 255)
 GREEN = (78, 255, 87)
@@ -37,17 +37,13 @@ ENEMY_DEFAULT_POSITION = 65  # Initial value for a new game
 ENEMY_MOVE_DOWN = 35
 
 
-##clase que inicia con un control para hacer la nave del jugador
 class Ship(sprite.Sprite):
-    ##inicializa los atributos que debe tener a fuerza en la nave del jugador 
     def __init__(self):
         sprite.Sprite.__init__(self)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(375, 540))
         self.speed = 5
-    
-    ##Manera en la que se va a mover en la pantalla con las coordenadas x y y 
-    ##dependiendo de lo que reciba de señal
+
     def update(self, keys, *args):
         if keys[K_LEFT] and self.rect.x > 10:
             self.rect.x -= self.speed
@@ -72,27 +68,42 @@ class Bullet(sprite.Sprite):
         if self.rect.y < 15 or self.rect.y > 600:
             self.kill()
 
-
+#Esta clase es para un enemigo en el videojuego.
+#Es una subclase para sprite.Sprite.
+#Se usa para hacer la animación del enemigo en el juego.
 class Enemy(sprite.Sprite):
+#El constructor __init__ se encarga de inicializar la instancia de la clase Enemy.
+#Toma dos argumentos: row y column, que indican la posición del enemigo en alguna estructura de filas y columnas.
     def __init__(self, row, column):
+#Llama al constructor de la superclase sprite.Sprite para inicializar la instancia.
+#Asigna los valores row y column a los atributos de la instancia.
         sprite.Sprite.__init__(self)
+#Asigna los valores row y column a los atributos de la instancia. 
         self.row = row
         self.column = column
+#Crea una lista vacía self.images. 
         self.images = []
+#Llama al método load_images() para cargar las imágenes del enemigo.
         self.load_images()
+#Inicializa un índice self.index en 0, que se utilizará para controlar la animación. 
         self.index = 0
+#Inicializa el atributo self.image con la primera imagen en self.images
         self.image = self.images[self.index]
+#Crea un rectángulo self.rect basado en la imagen actual.
         self.rect = self.image.get_rect()
-
+#Este método se encarga de cambiar la imagen del enemigo para lograr una animación. 
     def toggle_image(self):
+#Incrementa el índice self.index y, si el índice supera la cantidad de imágenes en self.images, lo reinicia a 0. 
         self.index += 1
         if self.index >= len(self.images):
             self.index = 0
+#Luego, actualiza el atributo self.image con la nueva imagen basada en el índice.
         self.image = self.images[self.index]
-
+#Este método es parte de la estructura de sprites y se llama en cada fotograma del juego.
+#Su función es dibujar la imagen actual del enemigo en la pantalla del juego utilizando game.screen.blit. Esto permite que el sprite del enemigo se muestre en la posición correcta en la pantalla.
     def update(self, *args):
         game.screen.blit(self.image, self.rect)
-
+#Este método carga las imágenes del enemigo en la lista self.images según la fila row del enemigo.
     def load_images(self):
         images = {0: ['1_2', '1_1'],
                   1: ['2_2', '2_1'],
@@ -100,20 +111,18 @@ class Enemy(sprite.Sprite):
                   3: ['3_1', '3_2'],
                   4: ['3_1', '3_2'],
                   }
+#Las imágenes se almacenan en un diccionario llamado IMAGES y se escalan a un tamaño de 40x35 píxeles antes de agregarlas a la lista self.images.
         img1, img2 = (IMAGES['enemy{}'.format(img_num)] for img_num in
                       images[self.row])
         self.images.append(transform.scale(img1, (40, 35)))
         self.images.append(transform.scale(img2, (40, 35)))
 
-#Se crea la clase EnemiesGroup con el parametro sprite.Group
+
 class EnemiesGroup(sprite.Group):
-    ##Constructo que inicializar el grupo, le damos los parametros de columnas(colums) y filas (rows)
-    ##    Es llamada cuando se crea una nueva instancia de la clase EnemiesGroup
     def __init__(self, columns, rows):
-        #Se establecen varios atributos para el movimiento,tiempo y posicion de los enemigos
         sprite.Group.__init__(self)
         self.enemies = [[None] * columns for _ in range(rows)]
-        self.columns = columns 
+        self.columns = columns
         self.rows = rows
         self.leftAddMove = 0
         self.rightAddMove = 0
@@ -128,9 +137,7 @@ class EnemiesGroup(sprite.Group):
         self._leftAliveColumn = 0
         self._rightAliveColumn = columns - 1
 
-    #Funcion que actualiza la posicion de los enemigos, le damos el parametro de current_time
     def update(self, current_time):
-        #Se actualiza la pocision en base al tiempo actual del juego 
         if current_time - self.timer > self.moveTime:
             if self.direction == 1:
                 max_move = self.rightMoves + self.rightAddMove
@@ -156,99 +163,114 @@ class EnemiesGroup(sprite.Group):
                 self.moveNumber += 1
 
             self.timer += self.moveTime
-    
-    ##Funcion para agregar enemigos a la instancia de la clase
-    ##Tambien almacena a los enemigos en una matriz llamada self.enemies
+
     def add_internal(self, *sprites):
         super(EnemiesGroup, self).add_internal(*sprites)
         for s in sprites:
             self.enemies[s.row][s.column] = s
 
-    ##Funcion para eleminar enemigos a la instancia de la clase tambien 
-    ##los elimina de la mariz
     def remove_internal(self, *sprites):
         super(EnemiesGroup, self).remove_internal(*sprites)
         for s in sprites:
             self.kill(s)
         self.update_speed()
 
-
-    ##Verifica si una columna esta vacia (Todos los enemigis han sido eliminados)
-    ##en kla matriz self.enemies
     def is_column_dead(self, column):
         return not any(self.enemies[row][column]
                        for row in range(self.rows))
 
-    #Devuelve un enemigo
     def random_bottom(self):
         col = choice(self._aliveColumns)
         col_enemies = (self.enemies[row - 1][col]
                        for row in range(self.rows, 0, -1))
         return next((en for en in col_enemies if en is not None), None)
 
-    #Cambia la velocidad de los enemigos segun los enemigos elminados
     def update_speed(self):
         if len(self) == 1:
             self.moveTime = 200
         elif len(self) <= 10:
             self.moveTime = 400
 
-    #Sirve para actualizar cuando se mata a un enemigo 
     def kill(self, enemy):
-        ##Actualiza la matriz de los enemigos estableciendo la posicion 
-        ##de lk enemigo a None
         self.enemies[enemy.row][enemy.column] = None
         is_column_dead = self.is_column_dead(enemy.column)
         if is_column_dead:
             self._aliveColumns.remove(enemy.column)
 
-        #Verifica si la columna a la derecha esta vacio 
         if enemy.column == self._rightAliveColumn:
             while self._rightAliveColumn > 0 and is_column_dead:
                 self._rightAliveColumn -= 1
                 self.rightAddMove += 5
                 is_column_dead = self.is_column_dead(self._rightAliveColumn)
-        #Verifica si la columna a la izquierda esta vacia
+
         elif enemy.column == self._leftAliveColumn:
             while self._leftAliveColumn < self.columns and is_column_dead:
                 self._leftAliveColumn += 1
                 self.leftAddMove += 5
                 is_column_dead = self.is_column_dead(self._leftAliveColumn)
 
-
+#Es una subclase de la clase sprite.Sprite.
+#Esta clase sirve para diseñar los bloques del videojuego.
 class Blocker(sprite.Sprite):
+#Se llama cuando se crea una instancia de Blocker. 
+#Toma cuatro parámetros:
+#size: El tamaño (ancho y alto) del bloque.
+#color: El color del bloque.
+#row: La fila en la que se ubicará el bloque.
+#column: La columna en la que se ubicará el bloque.
     def __init__(self, size, color, row, column):
         sprite.Sprite.__init__(self)
+#self.height y self.width son el alto y ancho del bloque, respectivamente.
         self.height = size
         self.width = size
+#self.color es el color del bloque.
         self.color = color
+#self.image es una superficie (Surface) del mismo tamaño que el bloque y se llena con el color especificado.
         self.image = Surface((self.width, self.height))
         self.image.fill(self.color)
+#self.rect es un rectángulo que abarca la superficie del bloque.
         self.rect = self.image.get_rect()
+#self.row y self.column almacenan la fila y columna en la que se encuentra el bloque.
         self.row = row
         self.column = column
-
+#Se utiliza para dibujar el bloque en la pantalla. 
+#Utiliza el atributo self.image (la superficie del bloque) y lo coloca en la posición definida por self.rect en la pantalla del juego (game.screen). 
     def update(self, keys, *args):
         game.screen.blit(self.image, self.rect)
 
-
+#Es una subclase de la clase sprite.Sprite.
 class Mystery(sprite.Sprite):
+#El constructor de la clase se llama cuando se crea una instancia de la clase "Mystery".
     def __init__(self):
+#Se llama al constructor de la clase base "Sprite" utilizando sprite.Sprite.__init__(self) para inicializar la funcionalidad básica de un sprite.
         sprite.Sprite.__init__(self)
+#Se carga una imagen desde un diccionario llamado "IMAGES" y se almacena en la propiedad "self.image".
+#La imagen se redimensiona a 75x35 píxeles.
+#Se crea un rectángulo asociado a la imagen y se coloca en la posición (-80, 45).
         self.image = IMAGES['mystery']
         self.image = transform.scale(self.image, (75, 35))
         self.rect = self.image.get_rect(topleft=(-80, 45))
+#Se inicializan varias propiedades como "self.row", "self.moveTime", "self.direction", "self.timer", y "self.playSound".
         self.row = 5
         self.moveTime = 25000
         self.direction = 1
         self.timer = time.get_ticks()
+#Se carga un archivo de sonido y se asocia con "self.mysteryEntered". Luego, se establece su volumen en 0.3 (30%).
         self.mysteryEntered = mixer.Sound(SOUND_PATH + 'mysteryentered.wav')
         self.mysteryEntered.set_volume(0.3)
         self.playSound = True
-
+#Este método se llama en cada ciclo del juego para actualizar el objeto "Mystery". 
     def update(self, keys, currentTime, *args):
         resetTimer = False
+#Calcula el tiempo transcurrido desde la última actualización en la variable "passed".
         passed = currentTime - self.timer
+#Si ha pasado más tiempo que el valor de "self.moveTime":
+#Si el objeto está fuera de la pantalla (a la izquierda o a la derecha) y "self.playSound" es verdadero, reproduce un sonido ("self.mysteryEntered") y establece "self.playSound" en falso para evitar que se reproduzca varias veces.
+#Mueve el objeto hacia la derecha si "self.direction" es 1 o hacia la izquierda si "self.direction" es -1. Durante el movimiento, también realiza un fadeout del sonido "self.mysteryEntered" durante 4 segundos.
+#Dibuja la imagen en la pantalla del juego en la nueva posición del objeto.
+#Si el objeto se encuentra a la derecha de la pantalla (más allá de x=830), reinicia el sonido y cambia la dirección a -1.
+#Si el objeto se encuentra a la izquierda de la pantalla (más allá de x=-90), reinicia el sonido y cambia la dirección a 1.
+#Si se cumplen las condiciones anteriores y "resetTimer" es verdadero, actualiza el temporizador "self.timer" con el tiempo actual. Esto asegura que el objeto vuelva a moverse después de un reinicio.
         if passed > self.moveTime:
             if (self.rect.x < 0 or self.rect.x > 800) and self.playSound:
                 self.mysteryEntered.play()
@@ -273,22 +295,41 @@ class Mystery(sprite.Sprite):
         if passed > self.moveTime and resetTimer:
             self.timer = currentTime
 
-
+#Es una subclase de la clase sprite.Sprite.
+#Esta subclase esta echa para hacer la explocion de los enemigos.
 class EnemyExplosion(sprite.Sprite):
+#El constructor de la clase se llama cuando se crea una instancia de "EnemyExplosion". Recibe dos parámetros: 
+#"enemy" (el enemigo que explotó) 
+#"*groups" (una tupla de grupos de sprites a los que se va a agregar este sprite).
     def __init__(self, enemy, *groups):
+#Inicia la funcionalidad básica de un sprite y agregarlo a los grupos especificados.
         super(EnemyExplosion, self).__init__(*groups)
+#Se obtiene una imagen de explosión llamando al método estático "get_image(enemy.row)" y se escala a un tamaño de 40x35 píxeles, lo que representa la primera etapa de la explosión.
+#Se obtiene una segunda imagen de explosión del mismo tipo, pero se escala a un tamaño de 50x45 píxeles, que representa la segunda etapa de la explosión.
         self.image = transform.scale(self.get_image(enemy.row), (40, 35))
         self.image2 = transform.scale(self.get_image(enemy.row), (50, 45))
+#Se crea un rectángulo asociado a la imagen y se coloca en la misma posición que el enemigo ("enemy") que explotó.
         self.rect = self.image.get_rect(topleft=(enemy.rect.x, enemy.rect.y))
+#Se registra el tiempo actual en "self.timer" utilizando time.get_ticks().
         self.timer = time.get_ticks()
 
     @staticmethod
+#Este método estático se utiliza para obtener la imagen de explosión correspondiente a la fila del enemigo que explotó.
+#El parámetro "row" se utiliza para determinar el tipo de imagen de explosión que se necesita. 
     def get_image(row):
+#Se crea una lista llamada "img_colors" que contiene nombres de colores.
         img_colors = ['purple', 'blue', 'blue', 'green', 'green']
+#La función busca la imagen de explosión en el diccionario "IMAGES" utilizando el color correspondiente al valor de "row".
+#La imagen seleccionada se devuelve como resultado.
         return IMAGES['explosion{}'.format(img_colors[row])]
-
+#Este método se llama en cada ciclo del juego para actualizar el objeto "EnemyExplosion". 
     def update(self, current_time, *args):
+#Calcula el tiempo transcurrido desde la creación del objeto, usando la diferencia entre el tiempo actual ("current_time") y el tiempo registrado en "self.timer".
         passed = current_time - self.timer
+#Luego, dependiendo del valor de "passed" (el tiempo transcurrido), se controla la aparición de las imágenes de explosión:
+#Si "passed" está en el rango de 0 a 100, se muestra la primera imagen de explosión en la posición del enemigo.
+#Si "passed" está en el rango de 100 a 200, se muestra la segunda imagen de explosión ligeramente desplazada.
+#Si "passed" supera los 400 milisegundos, el objeto "EnemyExplosion" se elimina del juego llamando a self.kill().
         if passed <= 100:
             game.screen.blit(self.image, self.rect)
         elif passed <= 200:
@@ -296,39 +337,48 @@ class EnemyExplosion(sprite.Sprite):
         elif 400 < passed:
             self.kill()
 
-
+#Es una subclase de la clase sprite.Sprite.
+#Esta subclase esta echa para hacer una explocion de un misterio en el juego y adquirir la puntuacion de la misma
 class MysteryExplosion(sprite.Sprite):
+#El constructor de la clase se llama cuando se crea una instancia de "MysteryExplosion". 
+#Recibe tres parámetros: 
+#"mystery" (un objeto Mystery que ha explotado),
+#"score" (la puntuación obtenida por la explosión), 
+#"*groups" (una tupla de grupos de sprites a los que se va a agregar este sprite).
     def __init__(self, mystery, score, *groups):
+#Inicia la funcion básica de un sprite y lo agrega a los grupos especificados.
         super(MysteryExplosion, self).__init__(*groups)
+#Se crea un objeto de texto ("self.text") utilizando una clase llamada "Text". Este objeto de texto se utiliza para mostrar la puntuación en la pantalla. 
+#El texto se crea con un tipo de fuente ("FONT"), un tamaño de fuente de 20, el valor de "score" convertido a una cadena, el color blanco ("WHITE"), y se coloca en una posición ligeramente desplazada desde la posición del objeto "mystery".
         self.text = Text(FONT, 20, str(score), WHITE,
                          mystery.rect.x + 20, mystery.rect.y + 6)
+#Se registra el tiempo actual en "self.timer" utilizando time.get_ticks().
         self.timer = time.get_ticks()
-
+#Este método se llama en cada ciclo del juego para actualizar el objeto "MysteryExplosion". 
     def update(self, current_time, *args):
+#Calcula el tiempo transcurrido desde la creación del objeto, usando la diferencia entre el tiempo actual ("current_time") y el tiempo registrado en "self.timer", que se almacenó en el constructor.
         passed = current_time - self.timer
+#Dependiendo del valor de "passed" (el tiempo transcurrido), se controla la aparición y desaparición del texto de puntuación:
+#Si "passed" está en el rango de 0 a 200 o en el rango de 400 a 600, se llama al método "draw" del objeto de texto ("self.text") para mostrar el texto en la pantalla del juego.
+#Si "passed" supera los 600 milisegundos, el objeto "MysteryExplosion" se elimina del juego llamando a self.kill().
+
         if passed <= 200 or 400 < passed <= 600:
             self.text.draw(game.screen)
         elif 600 < passed:
             self.kill()
 
 
-##Es para la la explosion de la nave del jugador, accion, no objeto
 class ShipExplosion(sprite.Sprite):
-    ##metodo principal de la clase para mostrar la imagen de vidas(nave del jugador),
-    ## que aparezca en las coordenadas de inicio y el tiempo de recuperacion 
     def __init__(self, ship, *groups):
         super(ShipExplosion, self).__init__(*groups)
         self.image = IMAGES['ship']
         self.rect = self.image.get_rect(topleft=(ship.rect.x, ship.rect.y))
         self.timer = time.get_ticks()
 
-    ##Recarga donde estaba la nave y la pone en las coordenasas indicadas
-    ##  ademas de sumarle una cantidad que representa cuando se pierde una vida
     def update(self, current_time, *args):
         passed = current_time - self.timer
         if 300 < passed <= 600:
             game.screen.blit(self.image, self.rect)
-        ##Si es mayor a 900 se termina el juego y esto es mandado a la clase principal de el juego 
         elif 900 < passed:
             self.kill()
 
@@ -666,8 +716,7 @@ class SpaceInvaders(object):
             display.update()
             self.clock.tick(60)
 
-##Que comience el juego, el juego va a ser igual a la clase principal,
-##  y despues se va a iniciar la funcioon main
+
 if __name__ == '__main__':
     game = SpaceInvaders()
     game.main()
